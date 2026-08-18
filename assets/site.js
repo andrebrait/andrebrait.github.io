@@ -1,4 +1,12 @@
 const relativeTime = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+const projectIcons = new Map([
+  ["pfBlockerNG/pfBlockerNG", "https://avatars.githubusercontent.com/u/291186053?s=96&v=4"],
+  ["pfBlockerNG/pfblockerng.github.io", "https://avatars.githubusercontent.com/u/291186053?s=96&v=4"],
+  ["andrebrait/invariant-colors", "https://raw.githubusercontent.com/andrebrait/invariant-colors/master/assets/icon.svg"],
+  ["sinalgo/sinalgo", "https://avatars.githubusercontent.com/u/40019749?s=96&v=4"],
+  ["junrar/junrar", "https://avatars.githubusercontent.com/u/2277828?s=96&v=4"],
+  ["elasticsoftwarefoundation/elasticactors", "https://avatars.githubusercontent.com/u/3697847?s=96&v=4"]
+]);
 
 export function formatRelative(date, now = Date.now()) {
   const seconds = (new Date(date).getTime() - now) / 1000;
@@ -14,6 +22,25 @@ function githubUrl(candidate, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function githubImageUrl(candidate) {
+  try {
+    const url = new URL(candidate);
+    const hosts = new Set(["avatars.githubusercontent.com", "github.com", "raw.githubusercontent.com"]);
+    return url.protocol === "https:" && hosts.has(url.hostname) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+export function projectIdentity(event) {
+  const repo = event.repo?.name || "GitHub";
+  const [owner = "", name = repo] = repo.split("/");
+  const fallback = owner && owner.toLowerCase() !== "andrebrait" ? `https://github.com/${encodeURIComponent(owner)}.png?size=96` : null;
+  const icon = githubImageUrl(projectIcons.get(repo) || event.org?.avatar_url || fallback);
+  const monogram = name.replace(/[^a-z0-9]/gi, "").slice(0, 2).toUpperCase() || "GH";
+  return { icon, label: `${owner || "GitHub"} ${name}`.trim(), monogram };
 }
 
 export function describeEvent(event) {
@@ -62,8 +89,10 @@ function capitalize(value = "updated") {
 function renderEvent(event) {
   const item = document.createElement("li");
   const description = describeEvent(event);
+  const identity = projectIdentity(event);
   const time = document.createElement("time");
   const link = document.createElement("a");
+  const icon = identity.icon ? document.createElement("img") : document.createElement("span");
   const action = document.createElement("span");
   const detail = document.createElement("strong");
   const repo = document.createElement("small");
@@ -73,12 +102,24 @@ function renderEvent(event) {
   time.title = new Date(event.created_at).toLocaleString();
   time.textContent = formatRelative(event.created_at);
   link.href = description.url;
+  icon.className = "activity-project-icon";
+  if (identity.icon) {
+    icon.src = identity.icon;
+    icon.alt = identity.label;
+    icon.width = 44;
+    icon.height = 44;
+    icon.loading = "lazy";
+  } else {
+    icon.textContent = identity.monogram;
+    icon.setAttribute("aria-hidden", "true");
+  }
+  action.className = "activity-action";
   action.textContent = description.action;
   detail.textContent = description.detail;
   repo.textContent = description.repo;
   arrow.textContent = "↗";
   arrow.setAttribute("aria-hidden", "true");
-  link.append(action, detail, repo, arrow);
+  link.append(icon, action, detail, repo, arrow);
   item.append(time, link);
   return item;
 }
