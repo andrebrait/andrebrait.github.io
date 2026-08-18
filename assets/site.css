@@ -403,6 +403,7 @@ footer {
   .hero { min-height: auto; }
   .section-heading, .elsewhere { grid-template-columns: 1fr; }
   .project-grid { grid-template-columns: 1fr; }
+  .project-card h3 { margin: 2.25rem 0 .65rem; }
   .activity-list li > a { grid-template-columns: 1fr auto; }
   .activity-list a > span { grid-column: 1; }
   .activity-list strong { grid-column: 1; }
